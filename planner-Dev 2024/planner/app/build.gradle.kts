@@ -49,6 +49,10 @@ dependencies {
     implementation("androidx.compose.runtime:runtime-livedata:1.5.4")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
 
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.compose.animation:animation:1.6.7")
+    implementation("androidx.compose.material3:material3:1.2.1")
+    implementation("androidx.core:core-ktx:1.13.1")
 
     implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.0")
     implementation(libs.androidx.core.ktx)

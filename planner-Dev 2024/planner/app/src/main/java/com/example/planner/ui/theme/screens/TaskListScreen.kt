@@ -21,6 +21,9 @@ import com.example.planner.data.StudyTask
 import com.example.planner.data.TaskManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +37,7 @@ fun TaskListScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var showMenu by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    val animationsEnabled = remember { mutableStateOf(true) }
 
     // Filtra as tarefas com base na query de busca
     val filteredTasks = if (searchQuery.isEmpty()) {
