@@ -64,4 +64,4 @@ Um aplicativo de planejamento de estudos desenvolvido em Kotlin e Jetpack Compos
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/seu-usuario/study-planner.git
+
