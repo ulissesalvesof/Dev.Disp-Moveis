@@ -1,10 +1,11 @@
-package com.example.authapp.viewmodel
+package com.example.planner.ui.theme.viewmodel
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.planner.data.AuthRepository
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 
 class AuthViewModel(
@@ -12,6 +13,9 @@ class AuthViewModel(
 ): ViewModel() {
     var loginResult: ((Boolean) -> Unit) ?= null
     var registerResult: ((Boolean) -> Unit) ?= null
+    fun isUserAuthenticated(): Boolean {
+        return FirebaseAuth.getInstance().currentUser != null
+    }
 
     fun login (
         email: String,

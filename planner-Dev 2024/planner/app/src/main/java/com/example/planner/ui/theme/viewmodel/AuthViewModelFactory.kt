@@ -1,8 +1,8 @@
-package com.example.authapp.viewmodel
+package com.example.planner.ui.theme.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.authapp.data.AuthRepository
+import com.example.planner.data.AuthRepository
 
 class AuthViewModelFactory(private val repository: AuthRepository) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {

@@ -32,7 +32,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
-import com.example.authapp.viewmodel.AuthViewModel
+import com.example.planner.ui.theme.viewmodel.AuthViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
-import com.example.authapp.R
+import com.example.planner.R
 
 
 @Composable
@@ -68,7 +68,7 @@ fun LoginScreen(viewModel: AuthViewModel, navController: NavController) {
             account?.idToken?.let { idToken ->
                 viewModel.loginWithGoogle(idToken) { success ->
                     if (success) {
-                        navController.navigate("home")
+                        navController.navigate("task_list")
                     } else {
                         Toast.makeText(
                             context,
@@ -107,8 +107,13 @@ fun LoginScreen(viewModel: AuthViewModel, navController: NavController) {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    "Bem-vindo ao AuthApp!",
+                    "Planner Center",
                     fontSize = 30.sp,
+                    style = MaterialTheme.typography.headlineLarge
+                )
+                Text(
+                    "Seu save de conteúdos para estudo",
+                    fontSize = 20.sp,
                     style = MaterialTheme.typography.headlineLarge
                 )
 
@@ -135,7 +140,7 @@ fun LoginScreen(viewModel: AuthViewModel, navController: NavController) {
                     onClick = {
                         viewModel.login(email, password) { success ->
                             if (success) {
-                                navController.navigate("home")
+                                navController.navigate("task_list")
                             } else {
                                 Toast.makeText(
                                     context,

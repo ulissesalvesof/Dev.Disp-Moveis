@@ -78,7 +78,11 @@ fun TaskDetailScreen(
                 task = task,
                 navController = navController,
                 context = context,
-                coroutineScope = coroutineScope
+                coroutineScope = coroutineScope,
+                showSnackbar = { message ->
+                    snackbarMessage = message
+                    showSnackbar = true
+                }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -141,7 +145,8 @@ private fun ManagementButtons(
     task: StudyTask,
     navController: NavController,
     context: Context,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
+    showSnackbar: (String) -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -160,6 +165,7 @@ private fun ManagementButtons(
             onClick = {
                 coroutineScope.launch {
                     TaskManager.deleteTask(context, task.id)
+                    showSnackbar("Tarefa removida com sucesso!")
                     navController.popBackStack()
                 }
             },

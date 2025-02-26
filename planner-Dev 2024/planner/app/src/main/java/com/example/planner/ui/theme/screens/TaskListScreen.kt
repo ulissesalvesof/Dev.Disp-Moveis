@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -18,26 +20,34 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.planner.data.StudyTask
-import com.example.planner.data.TaskManager
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskListScreen(
-    taskList: List<StudyTask>,
-    onTaskClick: (StudyTask) -> Unit,
     context: Context,
     navController: NavController,
     coroutineScope: CoroutineScope
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
+    val auth = FirebaseAuth.getInstance()
+    val currentUser = auth.currentUser
+    val db = FirebaseFirestore.getInstance()
+
+    var taskList by remember { mutableStateOf<List<StudyTask>>(emptyList()) }
     var showMenu by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
-    val animationsEnabled = remember { mutableStateOf(true) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Carregar tarefas ao iniciar a tela
+    LaunchedEffect(currentUser) {
+        if (currentUser != null) {
+            taskList = getTasks(currentUser.uid)
+        }
+    }
 
     // Filtra as tarefas com base na query de busca
     val filteredTasks = if (searchQuery.isEmpty()) {
@@ -96,6 +106,14 @@ fun TaskListScreen(
                                 showMenu = false
                             }
                         )
+                        DropdownMenuItem(
+                            text = { Text("Sair") },
+                            onClick = {
+                                // Implementar a lógica de logout
+                                logout(context, navController)
+                                showMenu = false
+                            }
+                        )
                     }
                 }
             )
@@ -139,25 +157,54 @@ fun TaskListScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp)
-                                .clickable { onTaskClick(task) },
+                                .clickable {
+                                    // Navega para a tela de detalhes da tarefa
+                                    navController.navigate("task_detail/${task.id}")
+                                },
                             elevation = CardDefaults.cardElevation(4.dp)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(task.title, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                                 Text(task.description, fontSize = 16.sp)
-                                Button(
-                                    onClick = {
-                                        isCompleted = !isCompleted
-                                        coroutineScope.launch {
-                                            TaskManager.updateTask(context, task.copy(completed = isCompleted))
-                                            snackbarHostState.showSnackbar(if (isCompleted) "Tarefa concluída!" else "Tarefa marcada como pendente!")
-                                        }
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (isCompleted) Color.Green else Color.Red
-                                    )
+                                if (task.videoUrl.isNotEmpty()) {
+                                    Text("Vídeo: ${task.videoUrl}", fontSize = 14.sp, color = Color.Blue)
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text(if (isCompleted) "Concluída" else "Pendente")
+                                    Button(
+                                        onClick = {
+                                            isCompleted = !isCompleted
+                                            coroutineScope.launch {
+                                                updateTask(currentUser?.uid, task.copy(completed = isCompleted))
+                                                snackbarHostState.showSnackbar(
+                                                    if (isCompleted) "Tarefa concluída!" else "Tarefa marcada como pendente!"
+                                                )
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = if (isCompleted) Color.Green else Color.Red
+                                        )
+                                    ) {
+                                        Text(if (isCompleted) "Concluída" else "Pendente")
+                                    }
+                                    IconButton(
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                toggleFavorite(currentUser?.uid, task)
+                                                snackbarHostState.showSnackbar(
+                                                    if (task.isFavorite) "Removido dos favoritos!" else "Adicionado aos favoritos!"
+                                                )
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = if (task.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                            contentDescription = "Favorito",
+                                            tint = if (task.isFavorite) Color.Red else Color.Gray
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -166,4 +213,66 @@ fun TaskListScreen(
             }
         }
     }
+}
+fun logout(context: Context, navController: NavController) {
+    val auth = FirebaseAuth.getInstance()
+    auth.signOut() // Faz logout do usuário
+
+    // Redireciona para a tela de login
+    navController.navigate("login") {
+        popUpTo(navController.graph.startDestinationId) {
+            inclusive = true // Remove todas as telas da pilha de navegação
+        }
+    }
+}
+
+// Função para buscar tarefas do Firestore
+suspend fun getTasks(uid: String): List<StudyTask> {
+    val db = FirebaseFirestore.getInstance()
+    return try {
+        val result = db.collection("users")
+            .document(uid)
+            .collection("tasks")
+            .get()
+            .await()
+        result.documents.map { document ->
+            StudyTask(
+                id = document.id,
+                title = document.getString("title") ?: "",
+                description = document.getString("description") ?: "",
+                completed = document.getBoolean("completed") ?: false,
+                isFavorite = document.getBoolean("isFavorite") ?: false,
+                videoUrl = document.getString("videoUrl") ?: ""
+            )
+        }
+    } catch (e: Exception) {
+        emptyList()
+    }
+}
+
+// Função para atualizar uma tarefa no Firestore
+suspend fun updateTask(uid: String?, task: StudyTask) {
+    if (uid == null) return
+    val db = FirebaseFirestore.getInstance()
+    val taskData = hashMapOf(
+        "title" to task.title,
+        "description" to task.description,
+        "completed" to task.completed,
+        "isFavorite" to task.isFavorite,
+        "videoUrl" to task.videoUrl
+    )
+    db.collection("users")
+        .document(uid)
+        .collection("tasks")
+        .document(task.id) // Usando o ID da tarefa
+        .set(taskData)
+        .await()
+}
+
+// Função para alternar o estado de favorito de uma tarefa
+suspend fun toggleFavorite(uid: String?, task: StudyTask) {
+    if (uid == null) return
+    val db = FirebaseFirestore.getInstance()
+    val updatedTask = task.copy(isFavorite = !task.isFavorite)
+    updateTask(uid, updatedTask)
 }

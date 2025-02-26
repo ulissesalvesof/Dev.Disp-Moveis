@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Planner</string>
+    <string name="default_web_client_id">318048232288-10fk21lr7rkvt8srm9svi30hgjq7fvn4.apps.googleusercontent.com</string>
 </resources>

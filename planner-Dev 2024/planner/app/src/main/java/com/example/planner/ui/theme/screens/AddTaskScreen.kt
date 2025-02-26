@@ -7,8 +7,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.planner.data.TaskManager
 import com.example.planner.data.StudyTask
+import com.example.planner.data.TaskManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -49,10 +49,11 @@ fun AddTaskScreen(context: Context, navController: NavController, coroutineScope
             onClick = {
                 if (title.isNotEmpty() && description.isNotEmpty()) {
                     val newTask = StudyTask(
-                        id = System.currentTimeMillis().toString(),
+                        id = System.currentTimeMillis().toString(), // Gera um ID único
                         title = title,
                         description = description,
                         completed = false,
+                        isFavorite = false,
                         videoUrl = videoUrl // Adiciona o link do vídeo à tarefa
                     )
                     coroutineScope.launch {
