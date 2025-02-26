@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "318048232288",
+    "project_id": "planner-22773",
+    "storage_bucket": "planner-22773.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:318048232288:android:6e96006a3c86a5ae90f405",
+        "android_client_info": {
+          "package_name": "com.example.planner"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "318048232288-hrkopv6hvh7nbk0ejc7gb7kobters8mp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.planner",
+            "certificate_hash": "79e73846b61c6eb65d5aec66eeecb1f55bf87842"
+          }
+        },
+        {
+          "client_id": "318048232288-10fk21lr7rkvt8srm9svi30hgjq7fvn4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBfunI8XCrvX8UCZePhV6uOxhEEesV5Bdo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "318048232288-10fk21lr7rkvt8srm9svi30hgjq7fvn4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
