@@ -2,6 +2,8 @@ package com.example.planner.ui.theme.screens
 
 import android.content.Context
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -21,9 +23,10 @@ fun EditTaskScreen(
 ) {
     var title by remember { mutableStateOf(task.title) }
     var description by remember { mutableStateOf(task.description) }
-    var videoUrl by remember { mutableStateOf(task.videoUrl) }
+    var videoUrls by remember { mutableStateOf(task.videoUrls) }
+    var newVideoUrl by remember { mutableStateOf("")}
 
-    Column(
+        Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
@@ -40,33 +43,52 @@ fun EditTaskScreen(
             onValueChange = { description = it },
             label = { Text("Descrição da Tarefa") },
             modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        TextField(
-            value = videoUrl,
-            onValueChange = { videoUrl = it },
-            label = { Text("Link do Vídeo (opcional)") },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Cole o link do YouTube aqui") }
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            onClick = {
-                if (title.isNotEmpty() && description.isNotEmpty()) {
-                    val updatedTask = task.copy(
-                        title = title,
-                        description = description,
-                        videoUrl = videoUrl
-                    )
-                    coroutineScope.launch {
-                        TaskManager.updateTask(context, updatedTask)
-                        navController.popBackStack() // Volta para a tela anterior
+        )// Campo para adicionar novo link de vídeo
+            TextField(
+                value = newVideoUrl,
+                onValueChange = { newVideoUrl = it },
+                label = { Text("Link do Vídeo (opcional)") },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Cole o link do YouTube aqui") }
+            )
+            Button(
+                onClick = {
+                    if (newVideoUrl.isNotEmpty()) {
+                        videoUrls = videoUrls + newVideoUrl
+                        newVideoUrl = ""
                     }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Adicionar Vídeo")
+            }
+
+            // Exibir lista de vídeos adicionados
+            LazyColumn {
+                items(videoUrls) { url ->
+                    Text(text = url, modifier = Modifier.padding(8.dp))
                 }
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Salvar Alterações")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    if (title.isNotEmpty() && description.isNotEmpty()) {
+                        val updatedTask = task.copy(
+                            title = title,
+                            description = description,
+                            videoUrls = videoUrls // Atualiza a lista de URLs de vídeos
+                        )
+                        coroutineScope.launch {
+                            TaskManager.updateTask(context, updatedTask)
+                            navController.popBackStack()
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Salvar Alterações")
+            }
         }
-    }
 }

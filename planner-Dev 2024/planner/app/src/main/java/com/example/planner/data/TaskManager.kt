@@ -22,7 +22,7 @@ object TaskManager {
             "description" to task.description,
             "completed" to task.completed,
             "isFavorite" to task.isFavorite,
-            "videoUrl" to task.videoUrl
+            "videoUrls" to task.videoUrls // Salva a lista de URLs de vídeos
         )
         db.collection("users").document(uid).collection("tasks").add(taskData).await()
     }
@@ -39,7 +39,7 @@ object TaskManager {
                 description = document.getString("description") ?: "",
                 completed = document.getBoolean("completed") ?: false,
                 isFavorite = document.getBoolean("isFavorite") ?: false,
-                videoUrl = document.getString("videoUrl") ?: ""
+                videoUrls = document.get("videoUrls") as? List<String> ?: emptyList()
             )
         } else {
             null
@@ -57,7 +57,7 @@ object TaskManager {
                 description = document.getString("description") ?: "",
                 completed = document.getBoolean("completed") ?: false,
                 isFavorite = document.getBoolean("isFavorite") ?: false,
-                videoUrl = document.getString("videoUrl") ?: ""
+                videoUrls = document.get("videoUrls") as? List<String> ?: emptyList()
             )
         }
         emit(tasks)
@@ -77,7 +77,7 @@ object TaskManager {
                 description = document.getString("description") ?: "",
                 completed = document.getBoolean("completed") ?: false,
                 isFavorite = document.getBoolean("isFavorite") ?: false,
-                videoUrl = document.getString("videoUrl") ?: ""
+                videoUrls = document.get("videoUrls") as? List<String> ?: emptyList()
             )
         }
     }
@@ -96,7 +96,7 @@ object TaskManager {
                 description = document.getString("description") ?: "",
                 completed = document.getBoolean("completed") ?: false,
                 isFavorite = document.getBoolean("isFavorite") ?: false,
-                videoUrl = document.getString("videoUrl") ?: ""
+                videoUrls = document.get("videoUrls") as? List<String> ?: emptyList()
             )
         }
     }
@@ -109,7 +109,7 @@ object TaskManager {
             "description" to task.description,
             "completed" to task.completed,
             "isFavorite" to task.isFavorite,
-            "videoUrl" to task.videoUrl
+            "videoUrls" to task.videoUrls
         )
         db.collection("users").document(uid).collection("tasks").document(task.id).set(taskData).await()
     }

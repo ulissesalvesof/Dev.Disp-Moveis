@@ -6,11 +6,18 @@ import android.os.Build
 import android.app.AlarmManager
 import android.app.PendingIntent
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
@@ -37,6 +44,9 @@ fun TaskDetailScreen(
     var showSnackbar by remember { mutableStateOf(false) }
     var snackbarMessage by remember { mutableStateOf("") }
 
+    // Estado para armazenar o número de minutos digitado pelo usuário
+    var minutesInput by remember { mutableStateOf("") }
+
     LaunchedEffect(showSnackbar) {
         if (showSnackbar) {
             snackbarHostState.showSnackbar(snackbarMessage)
@@ -54,188 +64,175 @@ fun TaskDetailScreen(
                 .padding(16.dp)
         ) {
             // Cabeçalho da Tarefa
-            Text(text = task.title, style = MaterialTheme.typography.titleLarge)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = task.description, style = MaterialTheme.typography.bodyMedium)
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Seção de Ações Rápidas
-            ActionButtons(
-                task = task,
-                onMarkAsCompleted = onMarkAsCompleted,
-                onAddToFavorites = onAddToFavorites,
-                context = context,
-                showSnackbar = { message ->
-                    snackbarMessage = message
-                    showSnackbar = true
-                }
+            Text(
+                text = task.title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
             )
-
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Seção de Gerenciamento
-            ManagementButtons(
-                task = task,
-                navController = navController,
-                context = context,
-                coroutineScope = coroutineScope,
-                showSnackbar = { message ->
-                    snackbarMessage = message
-                    showSnackbar = true
-                }
+            // Descrição da Tarefa em um "quadrado" separado
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            ) {
+                Text(
+                    text = task.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Campo de entrada para os minutos
+            OutlinedTextField(
+                value = minutesInput,
+                onValueChange = { minutesInput = it },
+                label = { Text("Minutos para agendar") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Number // Aceita apenas números
+                )
             )
-
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Player de Vídeo (se aplicável)
+            // Botões de Ação (sem texto, apenas ícones)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                // Botão de Status (Concluída/Pendente)
+                IconButton(
+                    onClick = {
+                        onMarkAsCompleted()
+                        snackbarMessage = if (task.completed) "Tarefa marcada como pendente!" else "Tarefa marcada como concluída!"
+                        showSnackbar = true
+                    },
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = if (task.completed) Icons.Default.Done else Icons.Default.Close,
+                        contentDescription = "Status",
+                        tint = if (task.completed) Color.Green else Color.Red
+                    )
+                }
+
+                // Botão de Agendamento
+                IconButton(
+                    onClick = {
+                        val minutes = minutesInput.toIntOrNull() ?: 0 // Converte o valor para Int
+                        if (minutes > 0) {
+                            scheduleNotification(context, task, minutes) { message ->
+                                snackbarMessage = message
+                                showSnackbar = true
+                            }
+                        } else {
+                            snackbarMessage = "Digite um número válido de minutos!"
+                            showSnackbar = true
+                        }
+                    },
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = "Agendar",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Botões de Gerenciamento e Favoritos
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                // Botão de Favoritos
+                IconButton(
+                    onClick = {
+                        onAddToFavorites()
+                        snackbarMessage = if (task.isFavorite) "Removido dos favoritos!" else "Adicionado aos favoritos!"
+                        showSnackbar = true
+                    },
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = if (task.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = "Favorito",
+                        tint = if (task.isFavorite) Color.Red else MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                // Botão de Edição
+                IconButton(
+                    onClick = { navController.navigate("edit_task/${task.id}") },
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Editar",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                // Botão de Exclusão
+                IconButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            TaskManager.deleteTask(context, task.id)
+                            snackbarMessage = "Tarefa removida com sucesso!"
+                            showSnackbar = true
+                            navController.popBackStack()
+                        }
+                    },
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Remover",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Seção de Vídeos
             VideoSection(task = task)
         }
     }
 }
 
 @Composable
-private fun ActionButtons(
-    task: StudyTask,
-    onMarkAsCompleted: () -> Unit,
-    onAddToFavorites: () -> Unit,
-    context: Context,
-    showSnackbar: (String) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        // Botão de Status (Concluída/Pendente)
-        Button(
-            onClick = {
-                onMarkAsCompleted()
-                showSnackbar(
-                    if (task.completed) "Tarefa marcada como pendente!"
-                    else "Tarefa marcada como concluída!"
-                )
-            },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (task.completed) Color.Green else Color.Red
-            )
-        ) {
-            Text(if (task.completed) "Concluída" else "Pendente")
-        }
-
-        // Botão de Agendamento
-        Button(
-            onClick = { scheduleNotification(context, task, showSnackbar) }
-        ) {
-            Text("Agendar Lembrete")
-        }
-
-        // Botão de Favoritos
-        Button(
-            onClick = {
-                onAddToFavorites()
-                showSnackbar("Tarefa adicionada aos favoritos!")
-            }
-        ) {
-            Text("Adicionar aos Favoritos")
-        }
-    }
-}
-
-@Composable
-private fun ManagementButtons(
-    task: StudyTask,
-    navController: NavController,
-    context: Context,
-    coroutineScope: CoroutineScope,
-    showSnackbar: (String) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        // Botão de Edição
-        Button(
-            onClick = { navController.navigate("edit_task/${task.id}") },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Blue)
-        ) {
-            Text("Editar Tarefa")
-        }
-
-        // Botão de Exclusão
-        Button(
-            onClick = {
-                coroutineScope.launch {
-                    TaskManager.deleteTask(context, task.id)
-                    showSnackbar("Tarefa removida com sucesso!")
-                    navController.popBackStack()
-                }
-            },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-        ) {
-            Text("Remover Tarefa")
-        }
-    }
-}
-
-@Composable
 private fun VideoSection(task: StudyTask) {
-    if (task.videoUrl.isNotEmpty()) {
+    if (task.videoUrls.isNotEmpty()) {
         Column {
             Text(
-                text = "Vídeo Relacionado:",
-                style = MaterialTheme.typography.titleMedium
+                text = "Vídeos Relacionados:",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (task.videoUrl.contains("youtube.com")) {
-                YouTubePlayer(videoUrl = task.videoUrl, context = LocalContext.current)
-            } else {
-                Text(
-                    text = "Link de vídeo inválido ou não é do YouTube.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+            LazyColumn {
+                items(task.videoUrls) { url ->
+                    if (url.contains("youtube.com")) {
+                        YouTubePlayer(videoUrl = url, context = LocalContext.current)
+                    } else {
+                        Text(
+                            text = "Link de vídeo inválido ou não é do YouTube.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
             }
         }
     }
-}
-
-private fun scheduleNotification(
-    context: Context,
-    task: StudyTask,
-    showSnackbar: (String) -> Unit
-) {
-    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-    val intent = Intent(context, AlarmReceiver::class.java).apply {
-        putExtra("title", task.title)
-        putExtra("message", task.description)
-    }
-
-    val pendingIntent = PendingIntent.getBroadcast(
-        context,
-        task.id.hashCode(),
-        intent,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
-
-    val triggerTime = Calendar.getInstance().apply {
-        timeInMillis = System.currentTimeMillis()
-        add(Calendar.MINUTE, 1)
-    }.timeInMillis
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            triggerTime,
-            pendingIntent
-        )
-    } else {
-        alarmManager.setExact(
-            AlarmManager.RTC_WAKEUP,
-            triggerTime,
-            pendingIntent
-        )
-    }
-
-    showSnackbar("Notificação agendada para 1 minuto!")
 }
 
 @Composable
@@ -256,4 +253,45 @@ private fun YouTubePlayer(videoUrl: String, context: Context) {
             .fillMaxWidth()
             .height(200.dp)
     )
+}
+
+private fun scheduleNotification(
+    context: Context,
+    task: StudyTask,
+    delayMinutes: Int,  // Novo parâmetro para definir o tempo de atraso
+    showSnackbar: (String) -> Unit
+) {
+    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    val intent = Intent(context, AlarmReceiver::class.java).apply {
+        putExtra("title", task.title)
+        putExtra("message", task.description)
+    }
+
+    val pendingIntent = PendingIntent.getBroadcast(
+        context,
+        task.id.hashCode(),
+        intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+    val triggerTime = Calendar.getInstance().apply {
+        timeInMillis = System.currentTimeMillis()
+        add(Calendar.MINUTE, delayMinutes)  // Usa o tempo definido pelo usuário
+    }.timeInMillis
+// Não funciona o sistema de alarme ainda
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            triggerTime,
+            pendingIntent
+        )
+    } else {
+        alarmManager.setExact(
+            AlarmManager.RTC_WAKEUP,
+            triggerTime,
+            pendingIntent
+        )
+    }
+
+    showSnackbar("Notificação agenda para $delayMinutes minutos!")
 }

@@ -6,5 +6,5 @@ data class StudyTask(
     val description: String,
     val completed: Boolean,
     val isFavorite: Boolean = false,
-    val videoUrl: String = ""
+    val videoUrls: List<String>
 )

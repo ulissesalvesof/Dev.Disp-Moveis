@@ -1,5 +1,9 @@
 package com.example.planner
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -41,6 +45,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
+
+        // Criar o canal de notificação
+        createNotificationChannel()
+
         // Inicialize o AuthRepository e AuthViewModel
         val authRepository = AuthRepository()
         val authViewModel = ViewModelProvider(this, AuthViewModelFactory(authRepository))
@@ -224,6 +232,22 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "TASK_REMINDER_CHANNEL",
+                "Lembretes de Tarefas",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Canal para notificações de tarefas"
+            }
+
+            // Obter o NotificationManager usando o contexto correto
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
         }
     }
 }

@@ -166,8 +166,8 @@ fun TaskListScreen(
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(task.title, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                                 Text(task.description, fontSize = 16.sp)
-                                if (task.videoUrl.isNotEmpty()) {
-                                    Text("Vídeo: ${task.videoUrl}", fontSize = 14.sp, color = Color.Blue)
+                                if (task.videoUrls.isNotEmpty()) {
+                                    Text("Vídeo: ${task.videoUrls}", fontSize = 14.sp, color = Color.Blue)
                                 }
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -242,7 +242,7 @@ suspend fun getTasks(uid: String): List<StudyTask> {
                 description = document.getString("description") ?: "",
                 completed = document.getBoolean("completed") ?: false,
                 isFavorite = document.getBoolean("isFavorite") ?: false,
-                videoUrl = document.getString("videoUrl") ?: ""
+                videoUrls = document.get("videoUrl") as? List<String> ?: emptyList()
             )
         }
     } catch (e: Exception) {
@@ -259,7 +259,7 @@ suspend fun updateTask(uid: String?, task: StudyTask) {
         "description" to task.description,
         "completed" to task.completed,
         "isFavorite" to task.isFavorite,
-        "videoUrl" to task.videoUrl
+        "videoUrl" to task.videoUrls
     )
     db.collection("users")
         .document(uid)

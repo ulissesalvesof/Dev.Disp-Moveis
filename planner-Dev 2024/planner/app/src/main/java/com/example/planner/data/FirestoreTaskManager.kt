@@ -15,7 +15,7 @@ object FirestoreTaskManager {
             "description" to task.description,
             "completed" to task.completed,
             "isFavorite" to task.isFavorite,
-            "videoUrl" to task.videoUrl
+            "videoUrl" to task.videoUrls
         )
         db.collection(TASKS_COLLECTION).document(task.id).set(taskData).await()
     }
@@ -27,7 +27,7 @@ object FirestoreTaskManager {
             "description" to task.description,
             "completed" to task.completed,
             "isFavorite" to task.isFavorite,
-            "videoUrl" to task.videoUrl
+            "videoUrl" to task.videoUrls
         )
         db.collection(TASKS_COLLECTION).document(task.id).update(taskData.toMap()).await()
     }
@@ -50,7 +50,7 @@ object FirestoreTaskManager {
                 description = document.getString("description") ?: "",
                 completed = document.getBoolean("completed") ?: false,
                 isFavorite = document.getBoolean("isFavorite") ?: false,
-                videoUrl = document.getString("videoUrl") ?: ""
+                videoUrls = document.get("videoUrls") as? List<String> ?: emptyList()
             )
         }
     }
