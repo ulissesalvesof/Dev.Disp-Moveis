@@ -100,49 +100,27 @@ fun TaskDetailScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botões de Ação (sem texto, apenas ícones)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                // Botão de Status (Concluída/Pendente)
-                IconButton(
-                    onClick = {
-                        onMarkAsCompleted()
-                        snackbarMessage = if (task.completed) "Tarefa marcada como pendente!" else "Tarefa marcada como concluída!"
-                        showSnackbar = true
-                    },
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Icon(
-                        imageVector = if (task.completed) Icons.Default.Done else Icons.Default.Close,
-                        contentDescription = "Status",
-                        tint = if (task.completed) Color.Green else Color.Red
-                    )
-                }
-
-                // Botão de Agendamento
-                IconButton(
-                    onClick = {
-                        val minutes = minutesInput.toIntOrNull() ?: 0 // Converte o valor para Int
-                        if (minutes > 0) {
-                            scheduleNotification(context, task, minutes) { message ->
-                                snackbarMessage = message
-                                showSnackbar = true
-                            }
-                        } else {
-                            snackbarMessage = "Digite um número válido de minutos!"
+            // Botão de Agendamento
+            IconButton(
+                onClick = {
+                    val minutes = minutesInput.toIntOrNull() ?: 0
+                    if (minutes > 0) {
+                        scheduleNotification(context, task, minutes) { message ->
+                            snackbarMessage = message
                             showSnackbar = true
                         }
-                    },
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = "Agendar",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
+                    } else {
+                        snackbarMessage = "Digite um número válido de minutos!"
+                        showSnackbar = true
+                    }
+                },
+                modifier = Modifier.size(40.dp) // Tamanho reduzido
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = "Agendar",
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -158,7 +136,7 @@ fun TaskDetailScreen(
                         snackbarMessage = if (task.isFavorite) "Removido dos favoritos!" else "Adicionado aos favoritos!"
                         showSnackbar = true
                     },
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(40.dp) // Tamanho reduzido
                 ) {
                     Icon(
                         imageVector = if (task.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
@@ -170,7 +148,7 @@ fun TaskDetailScreen(
                 // Botão de Edição
                 IconButton(
                     onClick = { navController.navigate("edit_task/${task.id}") },
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(40.dp) // Tamanho reduzido
                 ) {
                     Icon(
                         imageVector = Icons.Default.Edit,
@@ -189,7 +167,7 @@ fun TaskDetailScreen(
                             navController.popBackStack()
                         }
                     },
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(40.dp) // Tamanho reduzido
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,

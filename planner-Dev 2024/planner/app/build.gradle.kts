@@ -44,6 +44,7 @@ android {
 }
 
 dependencies {
+    implementation ("com.google.accompanist:accompanist-systemuicontroller:0.28.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
