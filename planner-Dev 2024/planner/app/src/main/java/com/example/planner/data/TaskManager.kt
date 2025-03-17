@@ -109,7 +109,7 @@ object TaskManager {
             "description" to task.description,
             "completed" to task.completed,
             "isFavorite" to task.isFavorite,
-            "videoUrls" to task.videoUrls
+            "videoUrls" to task.videoUrls // Garantir que os vídeos sejam preservados
         )
         db.collection("users").document(uid).collection("tasks").document(task.id).set(taskData).await()
     }

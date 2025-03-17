@@ -1,5 +1,6 @@
 package com.example.planner
 
+
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -43,6 +44,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import com.example.planner.ui.theme.screens.FavoritesScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -188,7 +190,7 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onAddToFavorites = {
                                         coroutineScope.launch {
-                                            TaskManager.updateTask(context, task!!.copy(isFavorite = true))
+                                            TaskManager.updateTask(context, task!!.copy(isFavorite = !task!!.isFavorite, videoUrls = task!!.videoUrls)) // Preservar vídeos
                                         }
                                     },
                                     context = context,

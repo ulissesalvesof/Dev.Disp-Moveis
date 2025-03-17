@@ -99,7 +99,7 @@ fun LoginScreen(viewModel: AuthViewModel, navController: NavController) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.icon),
+                    painter = painterResource(id = R.drawable.icon1),
                     contentDescription = "App Logo",
                     modifier = Modifier.size(80.dp)
                 )

@@ -5,6 +5,8 @@ import android.content.Intent
 import android.os.Build
 import android.app.AlarmManager
 import android.app.PendingIntent
+import android.app.TimePickerDialog
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -44,8 +46,11 @@ fun TaskDetailScreen(
     var showSnackbar by remember { mutableStateOf(false) }
     var snackbarMessage by remember { mutableStateOf("") }
 
-    // Estado para armazenar o número de minutos digitado pelo usuário
-    var minutesInput by remember { mutableStateOf("") }
+    // Estado para armazenar o horário selecionado pelo usuário
+    var selectedTime by remember { mutableStateOf<Calendar?>(null) }
+
+    // Estado local para controlar o estado de favorito
+    var isFavorite by remember { mutableStateOf(task.isFavorite) }
 
     LaunchedEffect(showSnackbar) {
         if (showSnackbar) {
@@ -88,39 +93,36 @@ fun TaskDetailScreen(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Campo de entrada para os minutos
-            OutlinedTextField(
-                value = minutesInput,
-                onValueChange = { minutesInput = it },
-                label = { Text("Minutos para agendar") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    keyboardType = KeyboardType.Number // Aceita apenas números
-                )
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Botão de Agendamento
-            IconButton(
+            // Botão para abrir o TimePickerDialog
+            Button(
                 onClick = {
-                    val minutes = minutesInput.toIntOrNull() ?: 0
-                    if (minutes > 0) {
-                        scheduleNotification(context, task, minutes) { message ->
-                            snackbarMessage = message
-                            showSnackbar = true
-                        }
-                    } else {
-                        snackbarMessage = "Digite um número válido de minutos!"
-                        showSnackbar = true
-                    }
+                    // Abre o TimePickerDialog
+                    val calendar = Calendar.getInstance()
+                    val timePickerDialog = TimePickerDialog(
+                        context,
+                        { _, hourOfDay, minute ->
+                            // Atualiza o horário selecionado
+                            selectedTime = Calendar.getInstance().apply {
+                                set(Calendar.HOUR_OF_DAY, hourOfDay)
+                                set(Calendar.MINUTE, minute)
+                            }
+                            // Agendar a notificação com o horário selecionado
+                            selectedTime?.let { time ->
+                                scheduleNotification(context, task, time, showSnackbar = { message ->
+                                    snackbarMessage = message
+                                    showSnackbar = true
+                                })
+                            }
+                        },
+                        calendar.get(Calendar.HOUR_OF_DAY),
+                        calendar.get(Calendar.MINUTE),
+                        true
+                    )
+                    timePickerDialog.show()
                 },
-                modifier = Modifier.size(40.dp) // Tamanho reduzido
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(
-                    imageVector = Icons.Default.Notifications,
-                    contentDescription = "Agendar",
-                    tint = MaterialTheme.colorScheme.primary
-                )
+                Text("Agendar Notificação")
             }
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -132,23 +134,25 @@ fun TaskDetailScreen(
                 // Botão de Favoritos
                 IconButton(
                     onClick = {
+                        isFavorite = !isFavorite // Atualiza o estado local
                         onAddToFavorites()
-                        snackbarMessage = if (task.isFavorite) "Removido dos favoritos!" else "Adicionado aos favoritos!"
+                        // Chama a função para atualizar o estado no banco de dados
+                        snackbarMessage = if (isFavorite) "Adicionado aos favoritos!" else "Removido dos favoritos!"
                         showSnackbar = true
                     },
-                    modifier = Modifier.size(40.dp) // Tamanho reduzido
+                    modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
-                        imageVector = if (task.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = "Favorito",
-                        tint = if (task.isFavorite) Color.Red else MaterialTheme.colorScheme.primary
+                        tint = if (isFavorite) Color.Red else MaterialTheme.colorScheme.primary
                     )
                 }
 
                 // Botão de Edição
                 IconButton(
                     onClick = { navController.navigate("edit_task/${task.id}") },
-                    modifier = Modifier.size(40.dp) // Tamanho reduzido
+                    modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Edit,
@@ -167,7 +171,7 @@ fun TaskDetailScreen(
                             navController.popBackStack()
                         }
                     },
-                    modifier = Modifier.size(40.dp) // Tamanho reduzido
+                    modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
@@ -197,7 +201,7 @@ private fun VideoSection(task: StudyTask) {
 
             LazyColumn {
                 items(task.videoUrls) { url ->
-                    if (url.contains("youtube.com")) {
+                    if (url.contains("youtube.com") || url.contains("youtu.be")) {
                         YouTubePlayer(videoUrl = url, context = LocalContext.current)
                     } else {
                         Text(
@@ -206,7 +210,7 @@ private fun VideoSection(task: StudyTask) {
                             color = MaterialTheme.colorScheme.error
                         )
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
@@ -221,8 +225,12 @@ private fun YouTubePlayer(videoUrl: String, context: Context) {
                 enableAutomaticInitialization = false
                 initialize(object : AbstractYouTubePlayerListener() {
                     override fun onReady(youTubePlayer: YouTubePlayer) {
-                        val videoId = videoUrl.substringAfter("v=").substringBefore("&")
-                        youTubePlayer.loadVideo(videoId, 0f)
+                        val videoId = extractVideoId(videoUrl)
+                        if (videoId != null) {
+                            youTubePlayer.loadVideo(videoId, 0f)
+                        } else {
+                            Toast.makeText(context, "Link do YouTube inválido", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 })
             }
@@ -230,13 +238,34 @@ private fun YouTubePlayer(videoUrl: String, context: Context) {
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
+            .padding(8.dp)
     )
+}
+
+/**
+ * Extrai o videoId de URLs do YouTube, incluindo links móveis.
+ */
+private fun extractVideoId(videoUrl: String): String? {
+    val patterns = listOf(
+        "v=([^&]+)", // Padrão para links desktop (https://www.youtube.com/watch?v=VIDEO_ID)
+        "youtu.be/([^?]+)", // Padrão para links encurtados (https://youtu.be/VIDEO_ID)
+        "m.youtube.com/watch\\?v=([^&]+)" // Padrão para links móveis (https://m.youtube.com/watch?v=VIDEO_ID)
+    )
+
+    for (pattern in patterns) {
+        val regex = Regex(pattern)
+        val matchResult = regex.find(videoUrl)
+        if (matchResult != null) {
+            return matchResult.groupValues[1]
+        }
+    }
+    return null
 }
 
 private fun scheduleNotification(
     context: Context,
     task: StudyTask,
-    delayMinutes: Int,  // Novo parâmetro para definir o tempo de atraso
+    triggerTime: Calendar,
     showSnackbar: (String) -> Unit
 ) {
     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -252,24 +281,21 @@ private fun scheduleNotification(
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
-    val triggerTime = Calendar.getInstance().apply {
-        timeInMillis = System.currentTimeMillis()
-        add(Calendar.MINUTE, delayMinutes)  // Usa o tempo definido pelo usuário
-    }.timeInMillis
-// Não funciona o sistema de alarme ainda
+    val triggerTimeMillis = triggerTime.timeInMillis
+
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
         alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
-            triggerTime,
+            triggerTimeMillis,
             pendingIntent
         )
     } else {
         alarmManager.setExact(
             AlarmManager.RTC_WAKEUP,
-            triggerTime,
+            triggerTimeMillis,
             pendingIntent
         )
     }
 
-    showSnackbar("Notificação agenda para $delayMinutes minutos!")
+    showSnackbar("Notificação agendada para ${triggerTime.get(Calendar.HOUR_OF_DAY)}:${triggerTime.get(Calendar.MINUTE)}!")
 }
